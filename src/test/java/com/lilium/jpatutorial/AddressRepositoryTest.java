@@ -10,6 +10,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.as;
+import static org.assertj.core.api.Assertions.assertThat;
+
 @SpringBootTest
 public class AddressRepositoryTest {
     @Autowired
@@ -31,22 +34,48 @@ public class AddressRepositoryTest {
 
         // Find all address with current timestamp and verify that none are found
         List<Address> allCreatedSince = repository.findAllCreatedSince(System.currentTimeMillis());
-        Assertions.assertThat(allCreatedSince)
+        assertThat(allCreatedSince)
                 .isNotNull()
                 .isEmpty();
 
         // Find all addresses created since 'beforeCreateSecondTimestamp' and verify that only second address is found
         allCreatedSince = repository.findAllCreatedSince(beforeCreateSecondAddressTimestamp);
-        Assertions.assertThat(allCreatedSince)
+        assertThat(allCreatedSince)
                 .isNotNull()
                 .extracting(Address::getId)
                 .containsExactly(secondCreatedAddress.getId());
 
         // Find all addresses created since 'beforeAllCreateTimestamp' and verify that all addresses are found
         allCreatedSince = repository.findAllCreatedSince(beforeAllCreateTimestamp);
-        Assertions.assertThat(allCreatedSince)
+        assertThat(allCreatedSince)
                 .isNotNull()
                 .extracting(Address::getId)
                 .containsExactlyInAnyOrder(firstCreatedAddress.getId(), secondCreatedAddress.getId());
+    }
+
+    @Test
+    void test_findAddressByName() {
+        final Address firstCreatedAddress = service.createAddress("742 Evergreen Terrace, Springfield, USA");
+        final Address secondCreatedAddress = service.createAddress("Oxenthorge Road, Puddleby, Slopshire, England");
+
+        //Search for address byName that does not exist
+        List<Address> foundAddresses = repository.findAll(AddressRepository.Specs.byName("I.do.not.exist"));
+        assertThat(foundAddresses)
+                .isNotNull()
+                .isEmpty();
+
+        //Search for first address by its name
+        foundAddresses = repository.findAll(AddressRepository.Specs.byName(firstCreatedAddress.getName()));
+        assertThat(foundAddresses)
+                .isNotNull()
+                .extracting(Address::getId)
+                .containsExactly(firstCreatedAddress.getId());
+
+        //Search for second address by part of its name
+        foundAddresses = repository.findAll(AddressRepository.Specs.byName("%ngland"));
+        assertThat(foundAddresses)
+                .isNotNull()
+                .extracting(Address::getId)
+                .containsExactly(secondCreatedAddress.getId());
     }
 }
