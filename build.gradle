@@ -1,0 +1,44 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.1.0'
+	id 'io.spring.dependency-management' version '1.1.0'
+}
+
+group = 'com.lilium'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	sourceCompatibility = '17'
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	annotationProcessor 'org.hibernate:hibernate-jpamodelgen:6.1.6.Final'
+
+	runtimeOnly 'com.h2database:h2'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+ext {
+	// Directory for generating main Java sources
+	generatedMainJava = '/src/main/generated'
+}
+
+sourceSets {
+	// Add generated sources directory.
+	main.java.srcDir generatedMainJava
+}
+
+compileJava {
+	// Specific to Hibernate JPA meta model generation process
+	options.compilerArgs += ['-AaddGenerationDate=true']
+	options.annotationProcessorGeneratedSourcesDirectory = file(generatedMainJava)
+}
